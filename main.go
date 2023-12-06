@@ -8,31 +8,39 @@ import (
 	"strings"
 )
 
-type apiaConfigData struct {
-	OpenWeatherMapApiKey string `json:"OpenWeatherMapApiKey"`
+type apiConfigData struct {
+	OpenWeatherApiKey string `json:"OpenWeatherApiKey"`
 }
 
 type weatherData struct {
 	Name string `json:"name"`
 	Main struct {
-		Kelvin float64 `json:"temp"`
+		Kalvin float64 `json:"temp"`
 	} `json:"main"`
 }
 
-func loadApiConfig(filename string) (apiaConfigData, error) {
+func loadApiConfig(filename string) (apiConfigData, error) {
 	bytes, err := os.ReadFile(filename)
 
+	// CHECKPOINT
+	fmt.Println("This is Bytes Data: ", bytes)
+
 	if err != nil {
-		return apiaConfigData{}, err
+		// CHECKPOINT
+		fmt.Println(err)
+		return apiConfigData{}, err
 	}
 
-	var configData apiaConfigData
+	var configData apiConfigData
 
-	err = json.Unmarshal(bytes, &configData)
-	if err != nil {
-		return apiaConfigData{}, err
+	err1 := json.Unmarshal(bytes, &configData)
+	if err1 != nil {
+		// CHECKPOINT
+		fmt.Println(err1)
+		return apiConfigData{}, err1
 	}
-
+	// CHECKPOINT
+	fmt.Println("This is Config Data: ", configData)
 	return configData, nil
 }
 
@@ -45,15 +53,18 @@ func query(city string) (weatherData, error) {
 
 	apiConfig, err := loadApiConfig(".apiConfig")
 	if err != nil {
+		// CHECKPOINT
+		fmt.Println(err)
 		return weatherData{}, err
 	}
+	fmt.Println(apiConfig.OpenWeatherApiKey)
 	//CALLING THE EXTERNAL API
-	// "https://api.openweathermap.org/data/2.5/weather?" + "q=" + city + "&appid=" + apiConfig.OpenWeatherMapApiKey
-	// res, err1 := http.Get("http://api.openweathermap.org/data/2.5/weather?APPID" + apiConfig.OpenWeatherMapApiKey + "&q=" + city)
-	res, err1 := http.Get("https://api.openweathermap.org/data/2.5/weather?q=" + city + "&appid=" + apiConfig.OpenWeatherMapApiKey)
+	// "https://api.openweathermap.org/data/2.5/weather?" + "q=" + city + "&appid=" + apiConfig.OpenWeatherApiKey
+	// res, err1 := http.Get("http://api.openweathermap.org/data/2.5/weather?APPID" + apiConfig.OpenWeatherApiKey + "&q=" + city)
+	res, err1 := http.Get("http://api.openweathermap.org/data/2.5/weather?q=" + city + "&APPID=" + apiConfig.OpenWeatherApiKey)
 
 	if err1 != nil {
-		fmt.Println("Error Detected")
+		// CHECKPOINT
 		fmt.Println(err1)
 		return weatherData{}, err1
 	}
@@ -63,6 +74,8 @@ func query(city string) (weatherData, error) {
 	var data weatherData
 	err2 := json.NewDecoder(res.Body).Decode(&data)
 	if err2 != nil {
+		// CHECKPOINT
+		fmt.Println(err2)
 		return weatherData{}, err2
 	}
 
@@ -74,6 +87,8 @@ func getWeatherReport(w http.ResponseWriter, r *http.Request) {
 	city := strings.SplitN(r.URL.Path, "/", 3)[2]
 	data, err := query(city)
 	if err != nil {
+		// CHECKPOINT
+		fmt.Println(err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
 	w.Header().Set("Content-Type", "application/json;charset=utf-8")
